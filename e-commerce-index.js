@@ -346,7 +346,7 @@ app.get("/api/gadget/:id/get",function(req,res){
     })
 });
 
-app.get("/api/gadget/:id/update",function(req,res){
+app.post("/api/gadget/:id/update",function(req,res){
     if(req.body.isLoggedIn === true)
     {
         if(req.body.crntUser.username === "Admin")
