@@ -392,7 +392,34 @@ app.post("/api/gadget/:id/update",function(req,res){
 app.get("/api/user/:id/cart",function(req,res){
     User.findById(req.params.id)
     .then((user)=>{
-        res.status(200).json(user);
+        let cart = [];
+        for(let i = 0;i<user.cart.length;i++)
+        {
+            Gadget.findById(user.cart[i].itemId)
+            .then((gadget)=>{
+                cart.push({
+                    id:gadget._id,
+                    gadgetName:gadget.gadgetName,
+                    imageUrl:gadget.imageUrl,
+                    price:gadget.price,
+                    amount:user.cart[i].amount
+                })
+                if(cart.length === user.cart.length)
+                {
+                    res.status(200).json({
+                        userDetails:{
+                            username:user.username,
+                            imageUrl:user.imageUrl
+                        },
+                        cart:cart
+                    })
+                }
+            })
+            .catch((err)=>{
+                console.log("Error while finding the gadget");
+                res.status(500).json(err);
+            })
+        }
     })
     .catch((err)=>{
         console.log("There was an error while finding the user in the database");
@@ -464,6 +491,7 @@ app.get("/api/user/:id/cart/:itemId",function(req,res){
                             })
                             .catch((err)=>{
                                 console.log("Error while saving the user details");
+                                res.status(500).json(err);
                             })
                         }
                     })
