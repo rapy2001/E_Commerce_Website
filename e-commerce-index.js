@@ -389,6 +389,28 @@ app.post("/api/gadget/:id/update",function(req,res){
     }
 });
 
+app.post("/api/user/:id/cart/add",function(req,res){
+    User.findById(req.params.id)
+    .then((user)=>{
+        user.cart.push({
+            itemId:req.body.itemId,
+            amount:1
+        })
+        user.save()
+        .then(()=>{
+            res.status(200).json("success");
+        })
+        .catch((err)=>{
+            console.log("Error saving changes to the user");
+            res.status(500).json(err);
+        })
+    })
+    .catch((err)=>{
+        console.log("Error while finding the user");
+        res.status(500).json(err);
+    })
+});
+
 app.get("/api/user/:id/cart",function(req,res){
     User.findById(req.params.id)
     .then((user)=>{
@@ -427,7 +449,7 @@ app.get("/api/user/:id/cart",function(req,res){
     })
 });
 
-app.get("/api/user/:id/cart/:itemId",function(req,res){
+app.post("/api/user/:id/cart/:itemId",function(req,res){
     User.findById(req.params.id)
     .then((user)=>{
         let cart = user.cart;
