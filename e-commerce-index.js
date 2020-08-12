@@ -389,6 +389,100 @@ app.post("/api/gadget/:id/update",function(req,res){
     }
 });
 
+app.get("/api/user/:id/cart",function(req,res){
+    User.findById(req.params.id)
+    .then((user)=>{
+        res.status(200).json(user);
+    })
+    .catch((err)=>{
+        console.log("There was an error while finding the user in the database");
+        res.status(500).json(err);
+    })
+});
+
+app.get("/api/user/:id/cart/:itemId",function(req,res){
+    User.findById(req.params.id)
+    .then((user)=>{
+        let cart = user.cart;
+        for(let i = 0; i<cart.length; i++)
+        {
+            if(cart[i].itemId === req.params.itemId)
+            {
+                if(req.body.flg === 0)
+                {
+                    if((cart[i].amount - 1) === 0)
+                    {
+                        cart[i].splice(i,1);
+                        user.cart = cart;
+                        user.save()
+                        .then(()=>{
+                            res.json({
+                                flag:0
+                            })
+                        })
+                        .catch((err)=>{
+                            console.log("Error while saving into the cart");
+                            res.status(500).json(err);
+                        })
+                    }
+                    else
+                    {
+                        cart[i].amount -=1;
+                        user.cart = cart;
+                        user.save()
+                        .then(()=>{
+                            res.json({
+                                flag:1
+                            })
+                        })
+                        .catch((err)=>{
+                            console.log("Error while saving into the cart");
+                            res.status(500).json(err);
+                        })
+                    }
+                   
+                }
+                else
+                {
+                    Gadget.findById(req.params.itemId)
+                    .then((gadget)=>{
+                        if((cart[i].amount + 1) >= gadget.amount)
+                        {
+                            res.status(200).json({
+                                flag:0
+                            })
+                        }
+                        else
+                        {
+                            cart[i].amount +=1;
+                            user.cart = cart;
+                            user.save()
+                            .then(()=>{
+                                res.status(200).json({
+                                    flag:1
+                                })
+                            })
+                            .catch((err)=>{
+                                console.log("Error while saving the user details");
+                            })
+                        }
+                    })
+                    .catch((err)=>{
+                        console.log("Error while finding the gadget for updating the cart");
+                        res.status(500);
+                    })
+                }
+                break;
+            }
+          
+        }
+    })
+    .catch((err)=>{
+        console.log("There was an error while finding the user in the database");
+        res.status(500).json(err);
+    })
+});
+
 app.listen(5000,function(req,res){
     console.log("Server started at port 5000 ....");
 })
