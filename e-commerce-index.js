@@ -181,7 +181,7 @@ app.post("/api/gadgets/create",function(req,res){
 });
 
 app.get("/api/gadget/:id/show",function(req,res){
-    console.log("working");
+    // console.log("working");
     let reviews = [];
     let flg = 1;
     Gadget.findById(req.params.id)
@@ -458,7 +458,14 @@ app.get("/api/user/:id/cart",function(req,res){
         }
         if(user.cart.length === 0)
         {
-            res.status(200).json("cart is empty");
+            res.status(200).json({
+                userDetails:{
+                    userId:user._id,
+                    username:user.username,
+                    imageUrl:user.imageUrl
+                },
+                cart:[]
+            })
         }
     })
     .catch((err)=>{
@@ -468,6 +475,7 @@ app.get("/api/user/:id/cart",function(req,res){
 });
 
 app.post("/api/user/:id/cart/:itemId",function(req,res){
+    // console.log("here present");
     User.findById(req.params.id)
     .then((user)=>{
         let cart = user.cart;
@@ -552,23 +560,41 @@ app.post("/api/user/:id/cart/:itemId",function(req,res){
     })
 });
 
+// app.post("/api/user/:id/cartHandle/payBill",function(req,res){
+//     console.log("Recedived the requrest");
+//     res.json("hello");
+// });
 
-app.post("/api/user/:id/cart/pay",function(req,res){
-    console.log("Here present");
+app.post("/api/user/:id/cartHandle/payBill",function(req,res){
+    // console.log("i am here");
     User.findById(req.params.id)
     .then((user)=>{
         let total = 0;
         let cart = req.body.cart;
         for(let i = 0;i<cart.length;i++)
         {
-            console.log("Here present");
+            // console.log("Here present");
             Gadget.findById(cart[i].id)
             .then((gadget)=>{
-                console.log("Here present");
+                // console.log("Here present");
                 gadget.amount -= cart[i].amount;
                 gadget.save()
                 .then(()=>{
-                    total +=1;
+                    // console.log("hello in then");
+                    total+=1;
+                    if(total === user.cart.length)
+                    {
+                        // console.log("here  i am");
+                        user.cart = [];
+                        user.save()
+                        .then(()=>{
+                            res.status(200).json("success");
+                        })
+                        .catch((err)=>{
+                            console.log("Error while saving the user during bill payment");
+                            res.status(500).json(err);
+                        })
+                    }
                 })
                 .catch((err)=>{
                     console.log("Error while saving the updated gadget");
@@ -579,22 +605,9 @@ app.post("/api/user/:id/cart/pay",function(req,res){
                 res.status(500).json(err);
             })
         }
-        if(total === cart.length)
-        {
-            user.cart = [];
-            user.save()
-            .then(()=>{
-                res.status(200).json("success");
-            })
-            .catch((err)=>{
-                console.log("Error while saving the user during bill payment");
-                res.status(500).json(err);
-            })
-        }
-
     })
     .catch((err)=>{
-        console.log("Error while findding the user during bill payment");
+        console.log("Error while finding the user during bill payment");
         res.status(500).json(err);
     })
 });
