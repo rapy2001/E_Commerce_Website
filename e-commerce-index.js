@@ -392,10 +392,23 @@ app.post("/api/gadget/:id/update",function(req,res){
 app.post("/api/user/:id/cart/add",function(req,res){
     User.findById(req.params.id)
     .then((user)=>{
-        user.cart.push({
-            itemId:req.body.itemId,
-            amount:1
-        })
+        let flag = 0;
+        for(let i= 0;i<user.cart.length;i++)
+        {
+            if(String(req.body.itemId) === String(user.cart[i].itemId))
+            {
+                user.cart[i].amount+=1;
+                flag = 1;
+                break;
+            }
+        }
+        if(flag === 0)
+        {
+            user.cart.push({
+                itemId:req.body.itemId,
+                amount:1
+            })
+        }
         user.save()
         .then(()=>{
             res.status(200).json("success");
@@ -430,6 +443,7 @@ app.get("/api/user/:id/cart",function(req,res){
                 {
                     res.status(200).json({
                         userDetails:{
+                            userId:user._id,
                             username:user.username,
                             imageUrl:user.imageUrl
                         },
@@ -441,6 +455,10 @@ app.get("/api/user/:id/cart",function(req,res){
                 console.log("Error while finding the gadget");
                 res.status(500).json(err);
             })
+        }
+        if(user.cart.length === 0)
+        {
+            res.status(200).json("cart is empty");
         }
     })
     .catch((err)=>{
@@ -455,13 +473,14 @@ app.post("/api/user/:id/cart/:itemId",function(req,res){
         let cart = user.cart;
         for(let i = 0; i<cart.length; i++)
         {
-            if(cart[i].itemId === req.params.itemId)
+            if(String(cart[i].itemId) === String(req.params.itemId))
             {
+                // console.log("hello present");
                 if(req.body.flg === 0)
                 {
                     if((cart[i].amount - 1) === 0)
                     {
-                        cart[i].splice(i,1);
+                        cart.splice(i,1);
                         user.cart = cart;
                         user.save()
                         .then(()=>{
@@ -529,6 +548,53 @@ app.post("/api/user/:id/cart/:itemId",function(req,res){
     })
     .catch((err)=>{
         console.log("There was an error while finding the user in the database");
+        res.status(500).json(err);
+    })
+});
+
+
+app.post("/api/user/:id/cart/pay",function(req,res){
+    console.log("Here present");
+    User.findById(req.params.id)
+    .then((user)=>{
+        let total = 0;
+        let cart = req.body.cart;
+        for(let i = 0;i<cart.length;i++)
+        {
+            console.log("Here present");
+            Gadget.findById(cart[i].id)
+            .then((gadget)=>{
+                console.log("Here present");
+                gadget.amount -= cart[i].amount;
+                gadget.save()
+                .then(()=>{
+                    total +=1;
+                })
+                .catch((err)=>{
+                    console.log("Error while saving the updated gadget");
+                })
+            })
+            .catch((err)=>{
+                console.log("Error while finding the gadget during bill payment");
+                res.status(500).json(err);
+            })
+        }
+        if(total === cart.length)
+        {
+            user.cart = [];
+            user.save()
+            .then(()=>{
+                res.status(200).json("success");
+            })
+            .catch((err)=>{
+                console.log("Error while saving the user during bill payment");
+                res.status(500).json(err);
+            })
+        }
+
+    })
+    .catch((err)=>{
+        console.log("Error while findding the user during bill payment");
         res.status(500).json(err);
     })
 });
