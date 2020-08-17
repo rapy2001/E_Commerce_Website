@@ -612,6 +612,54 @@ app.post("/api/user/:id/cartHandle/payBill",function(req,res){
     })
 });
 
+app.get("/api/search",function(req,res){
+    Gadget.find({})
+    .then((gadgets)=>{
+        let results = [];
+        for(let i = 0;i<gadgets.length;i++)
+        {
+            let srch = req.body.search.toLowerCase();
+            if(gadgets[i].gadgetName.length > srch.length)
+            {
+                let term = gadgets[i].toLowerCase();
+                let j = 0,k = srch.length-1;
+                while(k<=term.length)
+                {
+                    if(term.substring(j,k) === srch)
+                    {
+                        results.push(gadgets[i]);
+                        break;
+                    }
+                    j+=1;
+                    k+=srch.length-1;
+                }
+            }
+            else
+            {
+                let term = gadgets[i].toLowerCase();
+                let j = 0,k = term.length-1;
+                while(k<=srch.length)
+                {
+                    if(srch.substring(j,k) === term)
+                    {
+                        results.push(gadgets[i]);
+                        break;
+                    }
+                    j+=1;
+                    k+=srch.length-1;
+                }
+            }
+        }
+        res.status(200).json({
+            results:results
+        })
+    })
+    .catch((err)=>{
+        console.log("Error while finding the gadgets in search route");
+        res.status(500).json(err);
+    })
+});
+
 app.listen(5000,function(req,res){
     console.log("Server started at port 5000 ....");
 })
